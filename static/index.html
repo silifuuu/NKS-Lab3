@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemma NLP Chat</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #chat-container { width: 450px; height: 600px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #eee; }
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 18px; font-size: 14px; line-height: 1.4; }
+        .user { align-self: flex-end; background-color: #007bff; color: white; border-bottom-right-radius: 2px; }
+        .bot { align-self: flex-start; background-color: #e9ecef; color: #333; border-bottom-left-radius: 2px; }
+        #input-area { padding: 15px; display: flex; gap: 10px; background: #fff; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 25px; outline: none; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="messages">
+        <div class="message bot">Привет! Я модель Gemma-2, обученная по технологии LoRA. Спрашивай про GloVe!</div>
+    </div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button onclick="sendMessage()">Отправить</button>
+    </div>
+</div>
+
+<script>
+    let chatHistory = [];
+
+    async function sendMessage() {
+        const input = document.getElementById('user-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Добавляем сообщение пользователя на экран
+        addMessage(text, 'user');
+        input.value = '';
+
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, history: chatHistory })
+            });
+            
+            const data = await response.json();
+            addMessage(data.response, 'bot');
+            
+            // Сохраняем в историю для API
+            chatHistory.push({ user: text, bot: data.response });
+        } catch (e) {
+            addMessage("Ошибка связи с сервером", 'bot');
+        }
+    }
+
+    function addMessage(text, side) {
+        const div = document.createElement('div');
+        div.className = `message ${side}`;
+        div.innerText = text;
+        document.getElementById('messages').appendChild(div);
+        const container = document.getElementById('messages');
+        container.scrollTop = container.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
